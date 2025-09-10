@@ -25,38 +25,57 @@ const Dealer = () => {
   let post_review = root_url+`postreview/${id}`;
   
   const get_dealer = async () => {
-  try {
-    const res = await fetch(dealer_url, { method: "GET" });
-    const retobj = await res.json();
-
-    if (retobj.status === 200 && retobj.dealer) {
-      if (Array.isArray(retobj.dealer) && retobj.dealer.length > 0) {
-        setDealer(retobj.dealer[0]);   // backend returned a list
-      } else if (!Array.isArray(retobj.dealer)) {
-        setDealer(retobj.dealer);      // backend returned an object
+    try {
+      const res = await fetch(dealer_url, { method: "GET" });
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${res.status}`);
       }
-    } else {
-      setDealer(null); // no dealer found
-    }
-  } catch (err) {
-    console.error("Failed to fetch dealer:", err);
-    setDealer(null);
-  }
-};
-  const get_reviews = async ()=>{
-    const res = await fetch(reviews_url, {
-      method: "GET"
-    });
-    const retobj = await res.json();
-    
-    if(retobj.status === 200) {
-      if(retobj.reviews.length > 0){
-        setReviews(retobj.reviews)
+  
+      const retobj = await res.json();
+      console.log("Dealer API response:", retobj);
+  
+      // dealer is inside "dealer" property
+      if (retobj && retobj.dealer) {
+        setDealer(retobj.dealer);
       } else {
+        setDealer(null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch dealer:", err);
+      setDealer(null);
+    }
+  };
+  
+  const get_reviews = async () => {
+    try {
+      const res = await fetch(reviews_url, { method: "GET" });
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${res.status}`);
+      }
+  
+      const retobj = await res.json();
+      console.log("Reviews API response:", retobj);
+  
+      // reviews array is directly inside "reviews"
+      if (retobj && Array.isArray(retobj.reviews)) {
+        if (retobj.reviews.length > 0) {
+          setReviews(retobj.reviews);
+          setUnreviewed(false);
+        } else {
+          setReviews([]);
+          setUnreviewed(true);
+        }
+      } else {
+        setReviews([]);
         setUnreviewed(true);
       }
+    } catch (err) {
+      console.error("Failed to fetch reviews:", err);
+      setReviews([]);
+      setUnreviewed(true);
     }
-  }
+  };
+console.log(dealer, reviews)  
 
   const senti_icon = (sentiment)=>{
     let icon = sentiment === "positive"?positive_icon:sentiment==="negative"?negative_icon:neutral_icon;
@@ -78,8 +97,8 @@ return(
   <div style={{margin:"20px"}}>
       <Header/>
       <div style={{marginTop:"10px"}}>
-      <h1 style={{color:"grey"}}>{dealer.full_name}{postReview}</h1>
-      <h4  style={{color:"grey"}}>{dealer['city']},{dealer['address']}, Zip - {dealer['zip']}, {dealer['state']} </h4>
+      <h1 style={{color:"grey"}}>{dealer?.full_name}{postReview}</h1>
+      <h4  style={{color:"grey"}}>{dealer?.['city']},{dealer?.['address']}, Zip - {dealer?.['zip']}, {dealer?.['state']} </h4>
       </div>
       <div class="reviews_panel">
       {reviews.length === 0 && unreviewed === false ? (
